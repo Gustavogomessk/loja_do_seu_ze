@@ -1,3 +1,1 @@
-id,produto,categoria,preco,quantidade,fornecedor
-1,teste,teste,90.00,2,teste
-2,Camiseta linho M,Camiseta,80.00,5,China
+ID,Nome,Categoria,Preco

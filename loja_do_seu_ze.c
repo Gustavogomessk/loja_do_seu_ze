@@ -162,40 +162,50 @@ int salvarTemporario(Produto lista[], int total) {
 }
 
 // Criei uma função para carregar os produtos quando o programa iniciar.
-void carregarProdutos(Produto **lista, int *total) {
-    FILE *arquivo;
-    Produto produto;
-    Produto *aux;
 
-    // Abro o arquivo de produtos para leitura.
+// Criei uma função para carregar os produtos salvos no arquivo.
+void carregarProdutos(Produto **lista, int *total) {
+
+    FILE *arquivo; // Crio um ponteiro para acessar o arquivo.
+    Produto produto; // Crio uma variável para guardar os dados lidos.
+    Produto *aux; // Crio um ponteiro auxiliar para aumentar o vetor.
+    char linha[200]; // Crio um espaço para armazenar cada linha do arquivo.
+
+    // Abro o arquivo de produtos no modo de leitura.
     arquivo = fopen("produtos.txt", "r");
 
-    // Se o arquivo não existir, começo com a lista vazia.
+    // Verifico se consegui abrir o arquivo.
     if (arquivo == NULL) {
-        return;
+        return; // Encerro a função se o arquivo não existir.
     }
 
-    // Leio os dados enquanto encontrar registros válidos.
-    while (fscanf(arquivo, "%d|%49[^|]|%49[^|]|%f",
-                  &produto.id,
-                  produto.nome,
-                  produto.categoria,
-                  &produto.preco) == 4) {
+    // Leio o arquivo uma linha por vez.
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
 
-        // Aumento o espaço de memória para guardar mais um produto.
-        aux = realloc(*lista, (*total + 1) * sizeof(Produto));
+        // Tento separar os dados da linha nos campos do produto.
+        if (sscanf(linha, " %d | %49[^|] | %49[^|] | %f",
+                   &produto.id,
+                   produto.nome,
+                   produto.categoria,
+                   &produto.preco) == 4) {
 
-        // Verifico se consegui reservar memória.
-        if (aux == NULL) {
-            break;
+            // Aumento o espaço do vetor para guardar mais um produto.
+            aux = realloc(*lista, (*total + 1) * sizeof(Produto));
+
+            // Verifico se consegui reservar mais memória.
+            if (aux == NULL) {
+                break; // Paro a leitura caso não consiga reservar memória.
+            }
+
+            *lista = aux; // Atualizo o endereço do vetor.
+
+            (*lista)[*total] = produto; // Adiciono o produto encontrado ao vetor.
+
+            (*total)++; // Aumento a quantidade de produtos cadastrados.
         }
-
-        *lista = aux; // Atualizo o endereço da lista.
-        (*lista)[*total] = produto; // Adiciono o produto ao vetor.
-        (*total)++; // Aumento a quantidade de produtos.
     }
 
-    fclose(arquivo); // Fecho o arquivo depois da leitura.
+    fclose(arquivo); // Fecho o arquivo depois de terminar a leitura.
 }
 
 // Criei uma função para inserir um novo produto.

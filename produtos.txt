@@ -1,6 +1,6 @@
 ========== LOJA DO SEU ZE ==========
 ID | NOME | CATEGORIA | PRECO
 -----------------------------------------------------------
- 1 | Camiseta de Linho G | Camisetas | 90.00
+ 1 | Camiseta de Linho G | Camisetas | 80.00
 
  -----------------------------------------------------------
