@@ -1,521 +1,615 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 
-#define MAX 100
-#define ARQUIVO "produtos.txt"
-#define TEMPORARIO "temp.txt"
-#define CSV "produtos.csv"
-#define TRACOS 96
+#include <stdio.h> // Uso para exibir informações e trabalhar com arquivos.
+#include <stdlib.h> // Uso para alocação e liberação de memória.
+#include <string.h> // Uso para trabalhar com textos.
+#include <ctype.h> // Uso para comparar letras sem diferenciar maiúsculas e minúsculas.
 
-#define W_ID 3
-#define W_PRODUTO 24
-#define W_CATEGORIA 16
-#define W_PRECO 10
-#define W_QTD 10
-#define W_FORNECEDOR 14
-
+// Criei uma estrutura para guardar os dados de cada produto.
 typedef struct {
-    int id;
-    char nome[50];
-    char categoria[30];
-    float preco;
-    int quantidade;
-    char fornecedor[30];
+    int id;           // Guardo o identificador único do produto.
+    char nome[50];     // Guardo o nome do produto com limite de 50 caracteres.
+    char categoria[50]; // Guardo a categoria do produto.
+    float preco;     // Guardo o preço do produto.
 } Produto;
 
-void limpar_buffer() {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
+// Criei uma função para ler textos e remover a quebra de linha.
+void lerTexto(char texto[], int tamanho) {
+    fgets(texto, tamanho, stdin); // Aqui ele lê o texto digitado pelo usuário.
+    texto[strcspn(texto, "\n")] = '\0'; // Removo o ENTER do final do texto.
 }
 
-void ler_texto(char *destino, int tamanho) {
-    do {
-        if (fgets(destino, tamanho, stdin) == NULL) {
-            exit(0);
+// Criei uma função para comparar dois textos sem diferenciar letras maiúsculas.
+int compararTexto(char texto1[], char texto2[]) {
+    int i = 0; // Começo a comparação pela primeira posição.
+
+    while (texto1[i] != '\0' && texto2[i] != '\0') {
+        // Converto as letras para minúsculas antes de comparar.
+        char letra1 = tolower((unsigned char)texto1[i]);
+        char letra2 = tolower((unsigned char)texto2[i]);
+
+        if (letra1 != letra2) {
+            return letra1 - letra2; // Retorno a diferença entre as letras.
         }
-        destino[strcspn(destino, "\r\n")] = '\0';
-        for (int i = 0; destino[i] != '\0'; i++) {
-            if (destino[i] == ';' || destino[i] == ',' || destino[i] == '|') {
-                destino[i] = ' ';
-            }
-        }
-        if (strlen(destino) == 0) {
-            printf("O campo não pode ficar vazio. Digite novamente: ");
-        }
-    } while (strlen(destino) == 0);
+
+        i++; // Avanço para a próxima posição.
+    }
+
+    // Verifico se os textos terminaram na mesma posição.
+    return tolower((unsigned char)texto1[i]) -
+           tolower((unsigned char)texto2[i]);
 }
 
-int ler_inteiro() {
-    int numero;
-    int lidos = scanf("%d", &numero);
-    if (lidos == EOF) {
-        exit(0);
-    }
-    if (lidos != 1) {
-        numero = -1;
-    }
-    limpar_buffer();
-    return numero;
-}
-
-int ler_quantidade() {
-    int q = ler_inteiro();
-    while (q < 0) {
-        printf("Quantidade inválida. Digite novamente: ");
-        q = ler_inteiro();
-    }
-    return q;
-}
-
-float ler_preco() {
-    float preco;
-    while (scanf("%f", &preco) != 1 || preco < 0) {
-        limpar_buffer();
-        printf("Preço inválido. Digite novamente: ");
-    }
-    limpar_buffer();
-    return preco;
-}
-
-void minusculo(char *destino, char *origem) {
+// Criei uma função para verificar se um texto contém outro texto.
+int contemTexto(char texto[], char busca[]) {
     int i;
-    for (i = 0; origem[i] != '\0'; i++) {
-        destino[i] = tolower((unsigned char)origem[i]);
-    }
-    destino[i] = '\0';
-}
+    int j;
 
-void tirar_espacos(char *texto) {
-    int inicio = 0;
-    int fim = strlen(texto) - 1;
-    int j = 0;
-    while (texto[inicio] == ' ') {
-        inicio++;
+    // Se a busca estiver vazia, considero que ela foi encontrada.
+    if (busca[0] == '\0') {
+        return 1;
     }
-    while (fim >= inicio && texto[fim] == ' ') {
-        fim--;
-    }
-    for (int i = inicio; i <= fim; i++) {
-        texto[j] = texto[i];
-        j++;
-    }
-    texto[j] = '\0';
-}
 
-void copiar_campo(char *destino, char *origem, int tamanho) {
-    tirar_espacos(origem);
-    strncpy(destino, origem, tamanho - 1);
-    destino[tamanho - 1] = '\0';
-}
+    // Percorro o texto principal.
+    for (i = 0; texto[i] != '\0'; i++) {
+        j = 0; // Reinicio a posição do texto que estou procurando.
 
-void escrever_traco(FILE *saida) {
-    for (int i = 0; i < TRACOS; i++) {
-        fprintf(saida, "-");
-    }
-    fprintf(saida, "\n");
-}
+        // Comparo as letras até encontrar uma diferença.
+        while (busca[j] != '\0' &&
+               texto[i + j] != '\0' &&
+               tolower((unsigned char)texto[i + j]) ==
+               tolower((unsigned char)busca[j])) {
+            j++; // Avanço enquanto as letras forem iguais.
+        }
 
-void escrever_campo(FILE *saida, char *texto, int largura) {
-    int letras = 0;
-    for (int i = 0; texto[i] != '\0'; i++) {
-        if ((texto[i] & 0xC0) != 0x80) {
-            letras++;
+        // Se cheguei ao final da busca, encontrei o texto.
+        if (busca[j] == '\0') {
+            return 1;
         }
     }
-    fprintf(saida, " %s", texto);
-    for (int i = letras; i < largura; i++) {
-        fprintf(saida, " ");
-    }
-    fprintf(saida, " |");
+
+    return 0; // Retorno zero quando não encontro o texto.
 }
 
-void escrever_tabela(FILE *saida, Produto *lista, int total) {
-    char texto[20];
-    escrever_traco(saida);
-    fprintf(saida, "|");
-    escrever_campo(saida, "ID", W_ID);
-    escrever_campo(saida, "Produto", W_PRODUTO);
-    escrever_campo(saida, "Categoria", W_CATEGORIA);
-    escrever_campo(saida, "Preço (R$)", W_PRECO);
-    escrever_campo(saida, "Quantidade", W_QTD);
-    escrever_campo(saida, "Fornecedor", W_FORNECEDOR);
-    fprintf(saida, "\n");
-    escrever_traco(saida);
-    for (int i = 0; i < total; i++) {
-        fprintf(saida, "|");
-        sprintf(texto, "%d", lista[i].id);
-        escrever_campo(saida, texto, W_ID);
-        escrever_campo(saida, lista[i].nome, W_PRODUTO);
-        escrever_campo(saida, lista[i].categoria, W_CATEGORIA);
-        sprintf(texto, "%.2f", lista[i].preco);
-        escrever_campo(saida, texto, W_PRECO);
-        sprintf(texto, "%d", lista[i].quantidade);
-        escrever_campo(saida, texto, W_QTD);
-        escrever_campo(saida, lista[i].fornecedor, W_FORNECEDOR);
-        fprintf(saida, "\n");
-    }
-    escrever_traco(saida);
-}
+// Criei uma função para verificar se o nome já está cadastrado.
+int nomeExiste(Produto lista[], int total, char nome[], int posicao) {
+    int i;
 
-int carregar(Produto *lista) {
-    FILE *arq = fopen(ARQUIVO, "r");
-    char linha[300];
-    int total = 0;
-    if (arq == NULL) {
-        return 0;
-    }
-    while (total < MAX && fgets(linha, sizeof(linha), arq) != NULL) {
-        if (linha[0] != '|') {
-            continue;
-        }
-        char *id = strtok(linha, "|");
-        char *nome = strtok(NULL, "|");
-        char *categoria = strtok(NULL, "|");
-        char *preco = strtok(NULL, "|");
-        char *qtd = strtok(NULL, "|");
-        char *fornecedor = strtok(NULL, "|");
-        if (id != NULL && nome != NULL && categoria != NULL && preco != NULL
-            && qtd != NULL && fornecedor != NULL && atoi(id) > 0) {
-            lista[total].id = atoi(id);
-            copiar_campo(lista[total].nome, nome, sizeof(lista[total].nome));
-            copiar_campo(lista[total].categoria, categoria, sizeof(lista[total].categoria));
-            lista[total].preco = atof(preco);
-            lista[total].quantidade = atoi(qtd);
-            copiar_campo(lista[total].fornecedor, fornecedor, sizeof(lista[total].fornecedor));
-            total++;
+    // Percorro todos os produtos cadastrados.
+    for (i = 0; i < total; i++) {
+        // Ignoro a posição atual quando estou alterando um produto.
+        if (i != posicao &&
+            compararTexto(lista[i].nome, nome) == 0) {
+            return 1; // Retorno um se encontrar um nome repetido.
         }
     }
-    fclose(arq);
-    return total;
+
+    return 0; // Retorno zero quando o nome ainda não existe.
 }
 
-int gravar(Produto *lista, int total) {
-    FILE *temp = fopen(TEMPORARIO, "w");
-    if (temp == NULL) {
-        perror("Erro ao criar o arquivo temporário");
-        return 0;
+// Criei uma função para verificar se um ID já está sendo utilizado.
+int idExiste(Produto lista[], int total, int id) {
+    int i;
+
+    // Percorro a lista para procurar o identificador.
+    for (i = 0; i < total; i++) {
+        if (lista[i].id == id) {
+            return 1; // Encontrei um ID que já está cadastrado.
+        }
     }
-    escrever_tabela(temp, lista, total);
-    fclose(temp);
-    remove(ARQUIVO);
-    if (rename(TEMPORARIO, ARQUIVO) != 0) {
-        perror("Erro ao substituir o arquivo");
-        return 0;
-    }
-    return 1;
+
+    return 0; // O ID ainda não está sendo utilizado.
 }
 
-int gerar_id(Produto *lista, int total) {
+// Criei uma função para gerar IDs automaticamente.
+int gerarID(Produto lista[], int total) {
     int maior = 0;
-    for (int i = 0; i < total; i++) {
+    int i;
+
+    // Procuro o maior ID existente na lista.
+    for (i = 0; i < total; i++) {
         if (lista[i].id > maior) {
             maior = lista[i].id;
         }
     }
-    return maior + 1;
-}
 
-int id_existe(Produto *lista, int total, int id) {
-    for (int i = 0; i < total; i++) {
-        if (lista[i].id == id) {
-            return 1;
-        }
+    // Começo a gerar o próximo ID incremental.
+    maior++;
+
+    // Verifico se o novo ID já está sendo utilizado.
+    while (idExiste(lista, total, maior)) {
+        maior++; // Gero outro número caso exista duplicidade.
     }
-    return 0;
+
+    return maior; // Retorno o ID disponível.
 }
 
-int nome_existe(Produto *lista, int total, char *nome, int ignorar_id) {
-    char a[50], b[50];
-    minusculo(a, nome);
-    for (int i = 0; i < total; i++) {
-        minusculo(b, lista[i].nome);
-        if (strcmp(a, b) == 0 && lista[i].id != ignorar_id) {
-            return 1;
-        }
+// Criei uma função para salvar os dados em um arquivo temporário.
+int salvarTemporario(Produto lista[], int total) {
+    FILE *arquivo; // Crio um ponteiro para manipular o arquivo.
+    int i;
+
+    // Abro o arquivo temporário no modo de escrita.
+    arquivo = fopen("produtos.tmp", "w");
+
+    if (arquivo == NULL) {
+        return 0; // Informo que não consegui criar o arquivo.
     }
-    return 0;
-}
-
-int buscar_posicao(Produto *lista, int total, int id) {
-    for (int i = 0; i < total; i++) {
-        if (lista[i].id == id) {
-            return i;
-        }
+    fprintf(arquivo, "========== LOJA DO SEU ZE ==========\n");
+    fprintf(arquivo, "ID | NOME | CATEGORIA | PRECO\n"); // Adiciono o cabeçalho no arquivo.
+    fprintf(arquivo, "-----------------------------------------------------------\n"); // Adiciono uma linha separadora.
+    // Percorro todos os produtos cadastrados.
+    for (i = 0; i < total; i++) {
+        // Salvo os campos separados pelo caractere |.
+        fprintf(arquivo, " %d | %s | %s | %.2f\n",
+                lista[i].id,
+                lista[i].nome,
+                lista[i].categoria,
+                lista[i].preco);
     }
-    return -1;
+    fprintf(arquivo, "\n -----------------------------------------------------------"); // Adiciono uma linha em branco no final.
+
+    fclose(arquivo); // Fecho o arquivo depois de gravar os dados.
+
+    // Removo o arquivo antigo antes de colocar o novo no lugar.
+    remove("produtos.txt");
+
+    // Renomeio o arquivo temporário para substituir o original.
+    if (rename("produtos.tmp", "produtos.txt") != 0) {
+        return 0; // Informo que houve erro na substituição.
+    }
+
+    return 1; // Informo que o salvamento foi realizado.
 }
 
-void listar(Produto *lista, int total) {
-    if (total == 0) {
-        printf("Nenhum produto cadastrado.\n");
+// Criei uma função para carregar os produtos quando o programa iniciar.
+void carregarProdutos(Produto **lista, int *total) {
+    FILE *arquivo;
+    Produto produto;
+    Produto *aux;
+
+    // Abro o arquivo de produtos para leitura.
+    arquivo = fopen("produtos.txt", "r");
+
+    // Se o arquivo não existir, começo com a lista vazia.
+    if (arquivo == NULL) {
         return;
     }
-    printf("\n");
-    escrever_tabela(stdout, lista, total);
+
+    // Leio os dados enquanto encontrar registros válidos.
+    while (fscanf(arquivo, "%d|%49[^|]|%49[^|]|%f",
+                  &produto.id,
+                  produto.nome,
+                  produto.categoria,
+                  &produto.preco) == 4) {
+
+        // Aumento o espaço de memória para guardar mais um produto.
+        aux = realloc(*lista, (*total + 1) * sizeof(Produto));
+
+        // Verifico se consegui reservar memória.
+        if (aux == NULL) {
+            break;
+        }
+
+        *lista = aux; // Atualizo o endereço da lista.
+        (*lista)[*total] = produto; // Adiciono o produto ao vetor.
+        (*total)++; // Aumento a quantidade de produtos.
+    }
+
+    fclose(arquivo); // Fecho o arquivo depois da leitura.
 }
 
-void criar_arquivo() {
-    Produto lista[MAX];
-    FILE *arq = fopen(ARQUIVO, "r");
-    if (arq != NULL) {
-        fclose(arq);
-        printf("O arquivo %s já existe.\n", ARQUIVO);
-        return;
-    }
-    if (gravar(lista, 0)) {
-        printf("Arquivo %s criado com sucesso!\n", ARQUIVO);
-    }
-}
-
-void inserir() {
-    Produto lista[MAX];
-    int total = carregar(lista);
+// Criei uma função para inserir um novo produto.
+void inserirProduto(Produto **lista, int *total) {
     Produto novo;
-    Produto *p = &novo;
+    Produto *aux;
 
-    if (total >= MAX) {
-        printf("Limite de produtos atingido!\n");
+    printf("\nNome do produto: ");
+    lerTexto(novo.nome, 50); // Leio o nome digitado.
+
+    // Verifico se já existe um produto com esse nome.
+    if (nomeExiste(*lista, *total, novo.nome, -1)) {
+        printf("\nEsse produto ja esta cadastrado.\n");
         return;
     }
 
-    p->id = gerar_id(lista, total);
-    if (id_existe(lista, total, p->id)) {
-        printf("ID duplicado!\n");
-        return;
-    }
-
-    printf("Produto: ");
-    ler_texto(p->nome, sizeof(p->nome));
-    if (nome_existe(lista, total, p->nome, 0)) {
-        printf("Já existe um produto com esse nome!\n");
-        return;
-    }
     printf("Categoria: ");
-    ler_texto(p->categoria, sizeof(p->categoria));
-    printf("Preço (R$): ");
-    p->preco = ler_preco();
-    printf("Quantidade: ");
-    p->quantidade = ler_quantidade();
-    printf("Fornecedor: ");
-    ler_texto(p->fornecedor, sizeof(p->fornecedor));
+    lerTexto(novo.categoria, 50); // Leio a categoria.
 
-    lista[total] = novo;
-    total++;
-    if (gravar(lista, total)) {
-        printf("Produto cadastrado com sucesso! (ID %d)\n", p->id);
+    printf("Preco: ");
+    scanf("%f", &novo.preco); // Leio o preço.
+    while (getchar() != '\n'); // Limpo o ENTER do teclado.
+
+    // Não permito cadastrar preços negativos.
+    if (novo.preco < 0) {
+        printf("\nPreco invalido.\n");
+        return;
+    }
+
+    // Gero o ID automaticamente.
+    novo.id = gerarID(*lista, *total);
+
+    // Aumento o tamanho do vetor para receber o novo produto.
+    aux = realloc(*lista, (*total + 1) * sizeof(Produto));
+
+    if (aux == NULL) {
+        printf("\nErro ao reservar memoria.\n");
+        return;
+    }
+
+    *lista = aux; // Atualizo o endereço da lista.
+    (*lista)[*total] = novo; // Adiciono o novo produto ao vetor.
+    (*total)++; // Atualizo a quantidade de produtos.
+
+    // Salvo os produtos no arquivo temporário e substituo o original.
+    if (salvarTemporario(*lista, *total)) {
+        printf("\nProduto cadastrado com sucesso! ID: %d\n", novo.id);
+    } else {
+        (*total)--; // Desfaço a inclusão na quantidade.
+        printf("\nErro ao salvar o produto.\n");
     }
 }
 
-void alterar() {
-    Produto lista[MAX];
-    int total = carregar(lista);
+// Criei uma função para listar os produtos em formato de tabela.
+void listarProdutos(Produto lista[], int total) {
+    int i;
+
+    // Verifico se existe algum produto cadastrado.
+    if (total == 0) {
+        printf("\nNenhum produto cadastrado.\n");
+        return;
+    }
+
+    // Exibo o cabeçalho da tabela.
+    printf("\n%-8s %-25s %-20s %-10s\n",
+           "ID", "NOME", "CATEGORIA", "PRECO");
+
+    // Percorro o vetor e mostro os dados de cada produto.
+    for (i = 0; i < total; i++) {
+        printf("%-8d %-25s %-20s R$ %.2f\n",
+               lista[i].id,
+               lista[i].nome,
+               lista[i].categoria,
+               lista[i].preco);
+    }
+}
+
+// Criei uma função para alterar os dados de um produto.
+void alterarProduto(Produto lista[], int total) {
+    int id;
+    int i;
+    Produto original; // Guardo os dados antigos para poder recuperar.
+
+    printf("\nDigite o ID do produto: ");
+    scanf("%d", &id);
+    while (getchar() != '\n');
+
+    // Procuro o produto pelo ID informado.
+    for (i = 0; i < total; i++) {
+        if (lista[i].id == id) {
+
+            original = lista[i]; // Faço uma cópia dos dados originais.
+
+            printf("Novo nome: ");
+            lerTexto(lista[i].nome, 50);
+
+            // Verifico se o novo nome já pertence a outro produto.
+            if (nomeExiste(lista, total, lista[i].nome, i)) {
+                lista[i] = original; // Recupero os dados antigos.
+                printf("\nEsse nome ja esta cadastrado.\n");
+                return;
+            }
+
+            printf("Nova categoria: ");
+            lerTexto(lista[i].categoria, 50);
+
+            printf("Novo preco: ");
+            scanf("%f", &lista[i].preco);
+            while (getchar() != '\n');
+
+            // Verifico se o preço informado é válido.
+            if (lista[i].preco < 0) {
+                lista[i] = original;
+                printf("\nPreco invalido.\n");
+                return;
+            }
+
+            // Atualizo o arquivo usando o arquivo temporário.
+            if (salvarTemporario(lista, total)) {
+                printf("\nProduto alterado com sucesso.\n");
+            } else {
+                lista[i] = original; // Recupero os dados antigos.
+                printf("\nErro ao atualizar o arquivo.\n");
+            }
+
+            return;
+        }
+    }
+
+    printf("\nProduto nao encontrado.\n");
+}
+
+// Criei uma função para excluir um produto pelo ID.
+void excluirProduto(Produto lista[], int *total) {
+    int id;
+    int i;
+    int j;
+    Produto removido;
+
+    printf("\nDigite o ID do produto: ");
+    scanf("%d", &id);
+    while (getchar() != '\n');
+
+    // Procuro o produto que será excluído.
+    for (i = 0; i < *total; i++) {
+        if (lista[i].id == id) {
+
+            removido = lista[i]; // Guardo uma cópia do produto.
+
+            // Desloco os produtos seguintes uma posição para trás.
+            for (j = i; j < *total - 1; j++) {
+                lista[j] = lista[j + 1];
+            }
+
+            (*total)--; // Diminuo a quantidade de produtos.
+
+            // Salvo a lista atualizada no arquivo temporário.
+            if (salvarTemporario(lista, *total)) {
+                printf("\nProduto excluido com sucesso.\n");
+            } else {
+                // Recupero os elementos caso o salvamento falhe.
+                for (j = *total; j > i; j--) {
+                    lista[j] = lista[j - 1];
+                }
+
+                lista[i] = removido;
+                (*total)++;
+
+                printf("\nErro ao excluir o produto.\n");
+            }
+
+            return;
+        }
+    }
+
+    printf("\nProduto nao encontrado.\n");
+}
+
+// Criei uma função para buscar produtos pelo nome.
+void buscarProduto(Produto lista[], int total) {
     char nome[50];
+    int i;
+    int encontrado = 0;
 
-    listar(lista, total);
-    if (total == 0) {
-        return;
-    }
+    printf("\nDigite o nome do produto: ");
+    lerTexto(nome, 50);
 
-    printf("ID do produto a alterar: ");
-    int id = ler_inteiro();
-    int pos = buscar_posicao(lista, total, id);
-    if (pos == -1) {
-        printf("Produto não encontrado!\n");
-        return;
-    }
+    // Percorro os produtos procurando o texto informado.
+    for (i = 0; i < total; i++) {
+        if (contemTexto(lista[i].nome, nome)) {
 
-    Produto *p = &lista[pos];
-    printf("Novo nome: ");
-    ler_texto(nome, sizeof(nome));
-    if (nome_existe(lista, total, nome, p->id)) {
-        printf("Já existe um produto com esse nome!\n");
-        return;
-    }
-    strcpy(p->nome, nome);
-    printf("Nova categoria: ");
-    ler_texto(p->categoria, sizeof(p->categoria));
-    printf("Novo preço (R$): ");
-    p->preco = ler_preco();
-    printf("Nova quantidade: ");
-    p->quantidade = ler_quantidade();
-    printf("Novo fornecedor: ");
-    ler_texto(p->fornecedor, sizeof(p->fornecedor));
+            // Exibo os dados do produto encontrado.
+            printf("\nID: %d\n", lista[i].id);
+            printf("Nome: %s\n", lista[i].nome);
+            printf("Categoria: %s\n", lista[i].categoria);
+            printf("Preco: R$ %.2f\n", lista[i].preco);
 
-    if (gravar(lista, total)) {
-        printf("Produto alterado com sucesso!\n");
-    }
-}
-
-void excluir() {
-    Produto lista[MAX];
-    int total = carregar(lista);
-
-    listar(lista, total);
-    if (total == 0) {
-        return;
-    }
-
-    printf("ID do produto a excluir: ");
-    int id = ler_inteiro();
-    int pos = buscar_posicao(lista, total, id);
-    if (pos == -1) {
-        printf("Produto não encontrado!\n");
-        return;
-    }
-
-    for (int i = pos; i < total - 1; i++) {
-        lista[i] = lista[i + 1];
-    }
-    total--;
-
-    if (gravar(lista, total)) {
-        printf("Produto excluído com sucesso!\n");
-    }
-}
-
-void buscar_nome() {
-    Produto lista[MAX];
-    Produto achados[MAX];
-    int total = carregar(lista);
-    int n = 0;
-    char busca[50], nome[50];
-
-    printf("Nome (ou parte dele): ");
-    ler_texto(busca, sizeof(busca));
-    minusculo(busca, busca);
-
-    for (int i = 0; i < total; i++) {
-        minusculo(nome, lista[i].nome);
-        if (strstr(nome, busca) != NULL) {
-            achados[n] = lista[i];
-            n++;
+            encontrado = 1; // Marco que encontrei um resultado.
         }
     }
-    listar(achados, n);
+
+    // Informo caso nenhum produto tenha sido encontrado.
+    if (encontrado == 0) {
+        printf("\nProduto nao encontrado.\n");
+    }
 }
 
-void buscar_categoria() {
-    Produto lista[MAX];
-    Produto achados[MAX];
-    int total = carregar(lista);
-    int n = 0;
-    char busca[30], categoria[30];
+// Criei uma função para buscar produtos pela categoria.
+void buscarCategoria(Produto lista[], int total) {
+    char categoria[50];
+    int i;
+    int encontrado = 0;
 
-    printf("Categoria (ou parte dela): ");
-    ler_texto(busca, sizeof(busca));
-    minusculo(busca, busca);
+    printf("\nDigite a categoria: ");
+    lerTexto(categoria, 50);
 
-    for (int i = 0; i < total; i++) {
-        minusculo(categoria, lista[i].categoria);
-        if (strstr(categoria, busca) != NULL) {
-            achados[n] = lista[i];
-            n++;
+    // Percorro todos os produtos procurando a categoria.
+    for (i = 0; i < total; i++) {
+        if (contemTexto(lista[i].categoria, categoria)) {
+
+            // Exibo os dados dos produtos encontrados.
+            printf("\nID: %d\n", lista[i].id);
+            printf("Nome: %s\n", lista[i].nome);
+            printf("Categoria: %s\n", lista[i].categoria);
+            printf("Preco: R$ %.2f\n", lista[i].preco);
+
+            encontrado = 1;
         }
     }
-    listar(achados, n);
-}
 
-int deve_trocar(Produto *a, Produto *b, int criterio) {
-    char x[50], y[50];
-    minusculo(x, a->nome);
-    minusculo(y, b->nome);
-    switch (criterio) {
-        case 1: return strcmp(x, y) > 0;
-        case 2: return strcmp(x, y) < 0;
-        case 3: return a->preco > b->preco;
-        case 4: return a->preco < b->preco;
+    // Informo quando não encontro nenhum resultado.
+    if (encontrado == 0) {
+        printf("\nCategoria nao encontrada.\n");
     }
-    return 0;
 }
 
-void ordenar(Produto *lista, int total, int criterio) {
-    for (int i = 0; i < total - 1; i++) {
-        for (int j = 0; j < total - i - 1; j++) {
-            if (deve_trocar(&lista[j], &lista[j + 1], criterio)) {
-                Produto aux = lista[j];
+// Criei uma função para ordenar os produtos usando Bubble Sort.
+void ordenarProdutos(Produto lista[], int total) {
+    Produto aux; // Uso uma variável auxiliar para trocar os produtos.
+    int opcao;
+    int i;
+    int j;
+    int troca;
+
+    // Verifico se existem pelo menos dois produtos.
+    if (total < 2) {
+        printf("\nNao ha produtos suficientes para ordenar.\n");
+        return;
+    }
+
+    // Apresento as quatro formas de ordenação solicitadas.
+    printf("\n1 - Nome A-Z\n");
+    printf("2 - Nome Z-A\n");
+    printf("3 - Preco menor para maior\n");
+    printf("4 - Preco maior para menor\n");
+    printf("Escolha: ");
+
+    scanf("%d", &opcao);
+    while (getchar() != '\n');
+
+    // Verifico se a opção escolhida é válida.
+    if (opcao < 1 || opcao > 4) {
+        printf("\nOpcao invalida.\n");
+        return;
+    }
+
+    // O primeiro for controla as passagens do Bubble Sort.
+    for (i = 0; i < total - 1; i++) {
+
+        // O segundo for compara os produtos vizinhos.
+        for (j = 0; j < total - i - 1; j++) {
+
+            troca = 0; // Começo considerando que não precisa trocar.
+
+            // Ordeno os nomes de A até Z.
+            if (opcao == 1 &&
+                compararTexto(lista[j].nome, lista[j + 1].nome) > 0) {
+                troca = 1;
+            }
+
+            // Ordeno os nomes de Z até A.
+            if (opcao == 2 &&
+                compararTexto(lista[j].nome, lista[j + 1].nome) < 0) {
+                troca = 1;
+            }
+
+            // Ordeno os preços do menor para o maior.
+            if (opcao == 3 &&
+                lista[j].preco > lista[j + 1].preco) {
+                troca = 1;
+            }
+
+            // Ordeno os preços do maior para o menor.
+            if (opcao == 4 &&
+                lista[j].preco < lista[j + 1].preco) {
+                troca = 1;
+            }
+
+            // Se precisar trocar, inverto a posição dos produtos.
+            if (troca == 1) {
+                aux = lista[j];
                 lista[j] = lista[j + 1];
                 lista[j + 1] = aux;
             }
         }
     }
-    listar(lista, total);
+
+    // Exibo o resultado sem salvar a nova ordem no arquivo.
+    printf("\nProdutos ordenados:\n");
+    listarProdutos(lista, total);
 }
 
-void exportar_csv() {
-    Produto lista[MAX];
-    int total = carregar(lista);
-    FILE *csv = fopen(CSV, "w");
-    if (csv == NULL) {
-        perror("Erro ao criar o CSV");
+// Criei uma função para exportar os produtos para CSV.
+void exportarCSV(Produto lista[], int total) {
+    FILE *arquivo;
+    int i;
+
+    // Abro o arquivo CSV para escrita.
+    arquivo = fopen("produtos.csv", "w");
+
+    if (arquivo == NULL) {
+        printf("\nErro ao criar o arquivo CSV.\n");
         return;
     }
-    fprintf(csv, "id,produto,categoria,preco,quantidade,fornecedor\n");
-    for (int i = 0; i < total; i++) {
-        fprintf(csv, "%d,%s,%s,%.2f,%d,%s\n", lista[i].id, lista[i].nome,
-                lista[i].categoria, lista[i].preco, lista[i].quantidade,
-                lista[i].fornecedor);
+
+    // Escrevo o cabeçalho separado por vírgulas.
+    fprintf(arquivo, "ID,Nome,Categoria,Preco\n");
+
+    // Percorro os produtos e exporto seus dados.
+    for (i = 0; i < total; i++) {
+        fprintf(arquivo, "%d,%s,%s,%.2f\n",
+                lista[i].id,
+                lista[i].nome,
+                lista[i].categoria,
+                lista[i].preco);
     }
-    fclose(csv);
-    printf("Dados exportados para %s\n", CSV);
+
+    fclose(arquivo); // Fecho o arquivo depois da exportação.
+
+    printf("\nArquivo CSV exportado com sucesso.\n");
 }
 
+// Função principal do programa.
 int main() {
-    Produto lista[MAX];
-    int total;
+    Produto *lista = NULL; // Começo com o vetor vazio.
+    int total = 0; // Inicializo a quantidade de produtos.
     int opcao;
 
+    // Carrego os produtos salvos anteriormente.
+    carregarProdutos(&lista, &total);
+
+    // Utilizo o do while para manter o menu funcionando.
     do {
-        printf("\n===== Loja do Seu Zé =====\n");
-        printf("1  - Criar arquivo\n");
-        printf("2  - Listar produtos\n");
-        printf("3  - Inserir produto\n");
-        printf("4  - Alterar produto\n");
-        printf("5  - Excluir produto\n");
-        printf("6  - Buscar por nome\n");
-        printf("7  - Buscar por categoria\n");
-        printf("8  - Ordenar por nome (A-Z)\n");
-        printf("9  - Ordenar por nome (Z-A)\n");
-        printf("10 - Ordenar por preço (menor -> maior)\n");
-        printf("11 - Ordenar por preço (maior -> menor)\n");
-        printf("12 - Exportar para CSV\n");
-        printf("0  - Sair\n");
-        printf("Opção: ");
-        opcao = ler_inteiro();
+        printf("\n========== LOJA DO SEU ZE ==========\n");
+        printf("1 - Inserir produto\n");
+        printf("2 - Listar produtos\n");
+        printf("3 - Alterar produto\n");
+        printf("4 - Excluir produto\n");
+        printf("5 - Buscar por nome\n");
+        printf("6 - Buscar por categoria\n");
+        printf("7 - Ordenar produtos\n");
+        printf("8 - Exportar CSV\n");
+        printf("0 - Sair\n");
 
+        printf("\nEscolha: ");
+        scanf("%d", &opcao);
+        while (getchar() != '\n');
+
+        // Utilizo o switch para executar a opção escolhida.
         switch (opcao) {
-            case 1:  criar_arquivo(); break;
-            case 2:
-                total = carregar(lista);
-                listar(lista, total);
-                break;
-            case 3:  inserir(); break;
-            case 4:  alterar(); break;
-            case 5:  excluir(); break;
-            case 6:  buscar_nome(); break;
-            case 7:  buscar_categoria(); break;
-            case 8:
-                total = carregar(lista);
-                ordenar(lista, total, 1);
-                break;
-            case 9:
-                total = carregar(lista);
-                ordenar(lista, total, 2);
-                break;
-            case 10:
-                total = carregar(lista);
-                ordenar(lista, total, 3);
-                break;
-            case 11:
-                total = carregar(lista);
-                ordenar(lista, total, 4);
-                break;
-            case 12: exportar_csv(); break;
-            case 0:  printf("Até logo!\n"); break;
-            default: printf("Opção inválida!\n");
-        }
-    } while (opcao != 0);
 
-    return 0;
+            case 1:
+                inserirProduto(&lista, &total);
+                break;
+
+            case 2:
+                listarProdutos(lista, total);
+                break;
+
+            case 3:
+                alterarProduto(lista, total);
+                break;
+
+            case 4:
+                excluirProduto(lista, &total);
+                break;
+
+            case 5:
+                buscarProduto(lista, total);
+                break;
+
+            case 6:
+                buscarCategoria(lista, total);
+                break;
+
+            case 7:
+                ordenarProdutos(lista, total);
+                break;
+
+            case 8:
+                exportarCSV(lista, total);
+                break;
+
+            case 0:
+                printf("\nPrograma encerrado.\n");
+                break;
+
+            default:
+                printf("\nOpcao invalida.\n");
+        }
+
+    } while (opcao != 0); // Repito o menu até escolher sair.
+
+    free(lista); // Libero a memória que reservei para os produtos.
+
+    return 0; // Encerro o programa.
 }

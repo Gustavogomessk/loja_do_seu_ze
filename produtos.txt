@@ -1,24 +1,6 @@
-------------------------------------------------------------------------------------------------
-| ID  | Produto                  | Categoria        | Preço (R$) | Quantidade | Fornecedor     |
-------------------------------------------------------------------------------------------------
-| 1   | Camiseta básica P        | Camiseta         | 49.90      | 15         | Brasil         |
-| 2   | Camiseta linho M         | Camiseta         | 80.00      | 5          | China          |
-| 3   | Calça jeans 42           | Calça            | 129.90     | 8          | Denim Brasil   |
-| 4   | Bermuda masculina G      | Bermuda          | 69.90      | 12         | Moda Sul       |
-| 5   | Moletom preto G          | Moletom          | 119.90     | 7          | China          |
-| 6   | Jaqueta jeans M          | Jaqueta          | 189.90     | 4          | Denim Brasil   |
-| 7   | Tênis esportivo 40       | Calçado          | 199.90     | 6          | SportMax       |
-| 8   | Chinelo tradicional 41   | Calçado          | 29.90      | 20         | Havaí Imports  |
-| 9   | Meia esportiva           | Acessórios       | 19.90      | 30         | Brasil         |
-| 10  | Boné preto               | Acessórios       | 39.90      | 18         | Urban Style    |
-| 11  | Mochila escolar          | Mochila          | 89.90      | 10         | China          |
-| 12  | Relógio digital          | Eletrônicos      | 149.90     | 5          | Tech Imports   |
-| 13  | Fone Bluetooth           | Eletrônicos      | 79.90      | 14         | Tech Imports   |
-| 14  | Carregador USB-C         | Eletrônicos      | 45.90      | 22         | Eletrix        |
-| 15  | Garrafa térmica 500ml    | Utilidades       | 59.90      | 16         | Casa & Cia     |
-| 16  | Caneca de cerâmica       | Utilidades       | 24.90      | 25         | Brasil         |
-| 17  | Óculos de sol            | Acessórios       | 99.90      | 9          | Vision Store   |
-| 18  | Carteira masculina       | Acessórios       | 54.90      | 11         | Urban Style    |
-| 19  | Perfume masculino 100ml  | Perfumaria       | 159.90     | 6          | Beauty Imports |
-| 20  | Camisa social branca M   | Camisa           | 109.90     | 8          | Moda Sul       |
-------------------------------------------------------------------------------------------------
+========== LOJA DO SEU ZE ==========
+ID | NOME | CATEGORIA | PRECO
+-----------------------------------------------------------
+ 1 | Camiseta de Linho G | Camisetas | 90.00
+
+ -----------------------------------------------------------
